@@ -70,6 +70,7 @@ Finding your token is pretty simple:
 ## Future Improvements
 - [ ] Add configurable option for which languages to transcribe.
 - [ ] Improve audio stream detection/selection.
+- [ ] Add scheduled Plex library scanning.
 - [ ] Add [homepage](https://github.com/gethomepage/homepage) integration.
 - [ ] General clean-up.
 
