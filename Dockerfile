@@ -7,10 +7,10 @@ RUN pip install faster-whisper
 RUN pip install requests
 RUN pip install "celery[redis]"
 ENV PYTHONUNBUFFERED 1
-COPY autosub.py /autosub
-COPY tasks.py /autosub
-COPY utils.py /autosub
-COPY run.sh /autosub
+COPY autosub.py .
+COPY tasks.py .
+COPY utils.py .
+COPY run.sh .
 RUN chmod +x run.sh
-CMD ["/autosub/run.sh"]
+CMD ["./run.sh"]
 EXPOSE 8765
