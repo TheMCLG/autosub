@@ -11,7 +11,7 @@ WHISPER_MODEL = os.getenv('WHISPER_MODEL', 'medium') #tiny, base, small, medium,
 WHISPER_DEVICE = os.getenv('WHISPER_DEVICE', 'cpu') #cpu or cuda for Nvidia GPU's
 WHISPER_COMPUTETYPE = os.getenv('WHISPER_COMPUTETYPE', 'int8') #Recommended: int8 for cpu or float16 for cuda
 WHISPER_CPUTHREADS = os.getenv('WHISPER_CPUTHREADS', 2) #Number of CPU threads to use (only applicable for cpu)
-DEBUG_LOGGING = str_to_bool(os.getenv('DEBUG_LOGGING', False)) #Set to True to enable debug logging
+DEBUG_LOGGING = str_to_bool(os.getenv('DEBUG_LOGGING', 'False')) #Set to True to enable debug logging
 
 #Logging configuration
 if DEBUG_LOGGING:

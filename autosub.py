@@ -12,7 +12,7 @@ from tasks import start_transcription
 PLEX_URL = os.getenv('PLEX_URL', 'http://127.0.0.1:32400') #Plex server URL including http(s):// and port
 PLEX_TOKEN = os.getenv('PLEX_TOKEN', 'xxxxxxxxxxxxxx') #Your Plex token
 WEBHOOK_PORT = os.getenv('WEBHOOK_PORT', 8765) #Port to listen for webhook events
-DEBUG_LOGGING = str_to_bool(os.getenv('DEBUG_LOGGING', False)) #Set to True to enable debug logging
+DEBUG_LOGGING = str_to_bool(os.getenv('DEBUG_LOGGING', 'False')) #Set to True to enable debug logging
 
 #Logging configuration
 if DEBUG_LOGGING:
