@@ -35,13 +35,13 @@ If your Plex media path is `/media/movies/video.mp4`, then autosub needs to be a
 
 ### Docker
 The Dockerfile can be found in this repo, alongside an example `docker-compose.yml`.
-A prebuilt image can be downloaded from: [themclg/autosub:latest](https://hub.docker.com/layers/themclg/autosub/latest/images/sha256-7595f100b774b3835ad02d05df27992b6bc70fbf10927c835e1d2a17907a05d4?context=repo)
+A prebuilt image can be downloaded from: [themclg/autosub:latest](https://hub.docker.com/layers/themclg/autosub/latest/images/sha256-7595f100b774b3835ad02d05df27992b6bc70fbf10927c835e1d2a17907a05d4?context=repo). The image has built-in support for cuda/GPU transcribing but you will need to map your GPU in your `docker-compose.yml`.
 
 ### Plex 
 **Webhook**
 
-Plex Webhooks are configured under Account settings in Plex Web App (the Account item under the top right user menu).
-Add a new Webhook for your autosub address.
+Plex Webhooks are configured under "Account Settings" -> "Webhooks" in the Plex Web App (the Account Settings can be found under the top right user menu).
+Add a new Webhook and set the url to your autosub hostname/ip address, for example: `http://127.0.0.1:8765/webhook`.
 > [!NOTE]
 > If you are not receiving `library.new` webhook events, make sure push notifications are turned on for your Plex Server (don't ask me why).
 
