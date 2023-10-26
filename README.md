@@ -68,7 +68,7 @@ Finding your token is pretty simple:
 
 
 ## Future Improvements
-- [ ] Add support for configurable option for which languages to transcribe.
+- [ ] Add configurable option for which languages to transcribe.
 - [ ] Improve audio stream detection/selection.
 - [ ] General clean-up.
 
