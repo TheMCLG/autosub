@@ -17,17 +17,17 @@ Inspired by [McCloudS](https://github.com/McCloudS) / [subgen](https://github.co
 - Requires media folder paths to match relative to the Plex server.
 If your Plex media path is `/media/movies/video.mp4`, then autosub needs to be able to reach that media using the same path.
 - Only translates into English subtitles.
-- Currently skips any media with English audio.
+- Currently skips any media that contains English audio.
 
 ## Setup & Configuration
 
 ### Manual
 > [!IMPORTANT]
-> GPU execution requires the following NVIDIA libraries to be installed: cuBLAS for CUDA 11 & cuDNN 8 for CUDA 11
+> GPU execution requires these NVIDIA libraries to be installed: cuBLAS for CUDA 11 & cuDNN 8 for CUDA 11
 > [Read More](https://github.com/guillaumekln/faster-whisper#gpu)
 1. Install Python3, python3-pip, and ffmpeg.
 2. Install dependencies: `pip install flask stable-ts faster-whisper requests "celery[redis]" `
-3. Clone this repository: `git clone https://github.com/TheMCLG/autosub`
+3. Clone this repository: `git clone https://github.com/TheMCLG/autosub.git`
 4. Configure the Global Variables in `autosub.py` and `tasks.py` - see the Config Variables table below.
 5. Run `run.sh` or start both scripts manually by running:
    - `celery -A tasks worker --loglevel=INFO &`
@@ -42,7 +42,7 @@ A prebuilt image can be downloaded from: [themclg/autosub:latest](https://hub.do
 Plex Webhooks are configured under Account settings in Plex Web App (the Account item under the top right user menu).
 Add a new Webhook for your autosub address.
 > [!NOTE]
-> If you are not receiving webhook events, make sure Push Notifications are turned on for your Plex Server (Don't ask me why).
+> If you are not receiving `library.new` webhook events, make sure push notifications are turned on for your Plex Server (don't ask me why).
 
 **Plex Token**
 You need to add your Plex authentication token to the config variables in order for autosub to work.
@@ -50,6 +50,7 @@ Finding your token is pretty simple:
 1. Sign in to your Plex account in Plex Web App.
 2. Browse to a library item and view the XML for it.
 3. Look in the URL and find the token as the X-Plex-Token value.
+ 
 [More info](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/)
 
 
@@ -67,7 +68,7 @@ Finding your token is pretty simple:
 
 
 ## Future Improvements
-- [ ] Add support for configurable option to NOT transcribe for other langauges besides English.
+- [ ] Add support for configurable option for which languages to transcribe.
 - [ ] Improve audio stream detection/selection.
 - [ ] General clean-up.
 
