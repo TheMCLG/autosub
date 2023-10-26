@@ -1,7 +1,7 @@
 # AutoSub - AI Generated Subtitles For Plex
 AutoSub is a Python-based application that listens to Plex webhooks for newly added media. When new media is added and it contains audio that is not English on the primary audio channel, it then uses the [stable-ts](https://github.com/jianfch/stable-ts) library to transcribe and translate the audio into English subtitles.
 
-Inspired by [subgen](https://github.com/McCloudS/subgen/tree/d3c0aa2b5b62ae08900dde5ce05dd30a4e806722) by [McCloudS](https://github.com/McCloudS)
+Inspired by [McCloudS](https://github.com/McCloudS) / [subgen](https://github.com/McCloudS/subgen/tree/d3c0aa2b5b62ae08900dde5ce05dd30a4e806722) 
 
 ---
 ## Features
