@@ -7,7 +7,7 @@ Inspired by [McCloudS](https://github.com/McCloudS) / [subgen](https://github.co
 ## Features
 - Automatically scans new Plex media for audio that is not English.
 - Basic multithreading using [celery](https://github.com/celery/celery).
-- Supports CPU or Nvidia GPU's.
+- Supports CPU or Nvidia GPU's for transcribing.
 - Uses [stable-ts](https://github.com/jianfch/stable-ts) and [faster-whisper](https://github.com/guillaumekln/faster-whisper) for efficient audio transcription and translation to English.
 - Saves the transcription to an SRT file in the media's directory for use as subtitles.
 
