@@ -39,12 +39,14 @@ A prebuilt image can be downloaded from: [themclg/autosub:latest](https://hub.do
 
 ### Plex 
 **Webhook**
+
 Plex Webhooks are configured under Account settings in Plex Web App (the Account item under the top right user menu).
 Add a new Webhook for your autosub address.
 > [!NOTE]
 > If you are not receiving `library.new` webhook events, make sure push notifications are turned on for your Plex Server (don't ask me why).
 
 **Plex Token**
+
 You need to add your Plex authentication token to the config variables in order for autosub to work.
 Finding your token is pretty simple:
 1. Sign in to your Plex account in Plex Web App.
