@@ -1,5 +1,5 @@
 # AutoSub - AI Generated Subtitles For Plex
-AutoSub is a Python application that listens to Plex webhook events for newly added media. When it receives a new media event, it retrieves metadata from Plex to determine the language of the primary audio stream. If this audio stream is not in English, it then uses the [stable-ts](https://github.com/jianfch/stable-ts) library to transcribe and generate English subtitles.
+AutoSub is a Python script that listens to Plex webhook events for newly added media. When it receives a new media event, it retrieves metadata from Plex to determine the language of the primary audio stream. If this audio stream is not in English, it then uses the [stable-ts](https://github.com/jianfch/stable-ts) library to transcribe and generate English subtitles.
 
 Inspired by [McCloudS](https://github.com/McCloudS) / [subgen](https://github.com/McCloudS/subgen/tree/d3c0aa2b5b62ae08900dde5ce05dd30a4e806722) 
 
@@ -11,7 +11,7 @@ Inspired by [McCloudS](https://github.com/McCloudS) / [subgen](https://github.co
 - Uses [stable-ts](https://github.com/jianfch/stable-ts) and [faster-whisper](https://github.com/guillaumekln/faster-whisper) for efficient audio transcription and translation to English.
 - Saves the transcription to an SRT file in the media's directory for use as subtitles.
 
-## Prerequisites & Limitations
+## Limitations
 > [!IMPORTANT]
 > Make sure your media file paths are setup correctly.
 - Requires media folder paths to match relative to the Plex server.
@@ -19,7 +19,7 @@ If your Plex media path is `/media/movies/video.mp4`, then autosub needs to be a
 - Only translates into English subtitles.
 - Currently skips any media that contains English audio.
 
-## Setup & Configuration
+## Setup
 
 ### Manual
 > [!IMPORTANT]
@@ -28,7 +28,7 @@ If your Plex media path is `/media/movies/video.mp4`, then autosub needs to be a
 1. Install Python3, python3-pip, and ffmpeg.
 2. Install dependencies: `pip install flask stable-ts faster-whisper requests "celery[redis]" `
 3. Clone this repository: `git clone https://github.com/TheMCLG/autosub.git`
-4. Configure the Global Variables in `autosub.py` and `tasks.py` - see the Config Variables table below.
+4. Configure the Global Variables in `autosub.py` and `tasks.py` - see the [Variables](#Variables) table below.
 5. Run `run.sh` or start both scripts manually by running:
    - `celery -A tasks worker --loglevel=INFO &`
    - `python3 -u autosub.py`
@@ -56,7 +56,7 @@ Finding your token is pretty simple:
 [More info](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/)
 
 
-### Config Variables
+### Variables
 | Variable           | Default                    | Description                                                |
 |--------------------|----------------------------|------------------------------------------------------------|
 | `PLEX_URL`         | `http://127.0.0.1:32400`    | Plex server URL including `http(s)://` and port.           |
@@ -69,9 +69,10 @@ Finding your token is pretty simple:
 | `DEBUG_LOGGING`    | `False`                    | Set to `True` to enable debug logging.                     |
 
 
-## Future Improvements
+## Backlog
 - [ ] Add configurable option for which languages to transcribe.
 - [ ] Improve audio stream detection/selection.
+- [ ] Add detection for existing (English) subtitles.
 - [ ] Add scheduled Plex library scanning.
 - [ ] Add [homepage](https://github.com/gethomepage/homepage) integration.
 - [ ] General clean-up.
