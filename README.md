@@ -66,13 +66,15 @@ Finding your token is pretty simple:
 | `WHISPER_DEVICE`   | `cpu`                      | Compute device for Whisper. Options: `cpu` or `cuda` for Nvidia GPU's. Note: using `cuda` requires cuBLAS and cuDNN 8 for CUDA 11 installed. |
 | `WHISPER_COMPUTETYPE` | `int8`                   | Recommended: `int8` for CPU or `float16` for CUDA.         |
 | `WHISPER_CPUTHREADS` | `2`                       | Number of CPU threads to use (only applicable for CPU).   |
+| `SKIP_LANGUAGES`    | `en`                    | Comma seperated list containing audio languages for which you do **NOT** want to generate subtitles. Supports two-letter and three-letter lowercase abbreviation, see [ISO 639](https://en.wikipedia.org/wiki/ISO_639). Set to `None` to generate subtitles for all audio languages. Example: `eng, de, nl`.                     |
+| `SKIP_SUB_LANGUAGES`    | `en`                    | Comma seperated list containing subtitle languages. Will **NOT** generate a subtitle if the file has an existing subtitle matching this two-letter or three-letter lowercase abbreviation, see [ISO 639](https://en.wikipedia.org/wiki/ISO_639). Set to `None` to generate subtitles regardless of existing subtitles. Example: `eng, de, nl`.                     |
 | `DEBUG_LOGGING`    | `False`                    | Set to `True` to enable debug logging.                     |
 
-
 ## Backlog
-- [ ] Add configurable option for which languages to transcribe.
-- [ ] Improve audio stream detection/selection.
-- [ ] Add detection for existing (English) subtitles.
+- [x] Add configurable option to skip transcribing based on existing audio languages.
+- [x] Add configurable option to skip transcribing based on existing subtitle languages.
+- [x] Improve audio stream detection/selection.
+- [ ] Remove dependency on access to Plex media paths.
 - [ ] Add scheduled Plex library scanning.
 - [ ] Add [homepage](https://github.com/gethomepage/homepage) integration.
 - [ ] General clean-up.

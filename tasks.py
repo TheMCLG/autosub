@@ -16,6 +16,8 @@ DEBUG_LOGGING = str_to_bool(os.getenv("DEBUG_LOGGING", "False"))
 # Logging configuration
 if DEBUG_LOGGING:
     logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
+else:
+    logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 log = logging.getLogger("autosub")
 
 # Debug info
@@ -42,7 +44,7 @@ def start_transcription(filepath):
     try:
         start_time = perf_counter()
         log.info(f"Starting transcription for {filepath}")
-        result = model.transcribe_stable(filepath, task="translate")
+        result = model.transcribe_stable(filepath, task="translate", vad=True)
         result.to_srt_vtt(
             filepath.rsplit(".", 1)[0] + ".aigen.en.srt", word_level=False
         )

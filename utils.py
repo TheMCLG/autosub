@@ -12,3 +12,21 @@ def str_to_bool(s):
         return False
     else:
         log.error(f"Invalid boolean value: {s}")
+
+
+def str_to_list(s):
+    # Converts a string to a list
+    if s == "None":
+        return None
+    if s:
+        if " " in s and not ", " in s:
+            log.error(f"Inconsistent list formatting: {s}")
+        elif ", " in s:
+            return s.split(", ")
+        elif "," in s:
+            return s.split(",")
+        elif not ", " in s and not "," in s:
+            s = [s]
+            return s
+        else:
+            log.error(f"Invalid list value: {s}")
