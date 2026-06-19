@@ -4,6 +4,12 @@ Welcome to the ultimate deployment guide for **AutoSub**! This guide is designed
 
 AutoSub connects directly to your Plex server via the network to detect newly added media, determine its audio language, generate English subtitles for non-English audio, and upload them back to your Plex server.
 
+> **🚀 Quick-Start for Experienced Users:**
+> 1. Copy `docker-compose.yml` and `.env.example` (rename to `.env`) from the repo.
+> 2. Fill in `.env` with your `PLEX_URL` and `PLEX_TOKEN` (found via "View XML" on any Plex media item).
+> 3. Run `docker compose up -d`.
+> 4. Add the AutoSub Webhook (`http://YOUR_DOCKER_IP:8765/webhook`) in your Plex Account Settings -> Webhooks.
+
 ---
 
 ## Table of Contents
@@ -14,7 +20,9 @@ AutoSub connects directly to your Plex server via the network to detect newly ad
 5. [Deployment Method C: Manual Installation](#5-deployment-method-c-manual-installation)
 6. [Configuring Plex Webhooks](#6-configuring-plex-webhooks)
 7. [Environment Variables Explained](#7-environment-variables-explained)
-8. [Troubleshooting](#8-troubleshooting)
+8. [Common Pitfalls](#8-common-pitfalls)
+9. [Backup, Recovery, and Updates](#9-backup-recovery-and-updates)
+10. [Troubleshooting](#10-troubleshooting)
 
 ---
 
