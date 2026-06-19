@@ -18,6 +18,4 @@ services:
       - "SKIP_LANGUAGES=en" #Example: 'en, de, fr'
       - "SKIP_SUB_LANGUAGES=en" #Example: 'en, de, fr'
       - "DEBUG_LOGGING=False" #Set to True to enable debug logging
-    volumes:
-      - '/media:/media' #Volumes should be mapped to the same paths as your Plex server
     restart: unless-stopped

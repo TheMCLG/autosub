@@ -9,14 +9,14 @@ Inspired by [McCloudS](https://github.com/McCloudS) / [subgen](https://github.co
 ---
 ## Features
 - Automatically scans new Plex media for audio that is not English.
-
+- **Zero file system dependencies:** Operates entirely over the network via the Plex API—no volume mounts or file system access needed!
 - Supports CPU or Nvidia GPU's for transcribing.
 - Uses [stable-ts](https://github.com/jianfch/stable-ts) and [faster-whisper](https://github.com/guillaumekln/faster-whisper) for efficient audio transcription and translation to English.
 - Uploads the transcription directly to the Plex server as an SRT subtitle track.
 
 ## Limitations
-- Only translates into English subtitles.
-- Currently skips any media that contains English audio.
+- Faster-Whisper only supports translating text into English.
+- By default, skips media containing English audio/subtitles. This is a configurable behavior.
 
 ## Setup
 
@@ -32,8 +32,33 @@ Inspired by [McCloudS](https://github.com/McCloudS) / [subgen](https://github.co
    - `python3 -u autosub.py` (For production workloads it is highly recommended to run using the included `run.sh` script which leverages Gunicorn with a single worker process `-w 1` to prevent loading duplicate models into GPU memory)
 
 ### Docker
-The Dockerfile can be found in this repo, alongside an example `docker-compose.yml`.
+The Dockerfile can be found in this repo.
 A prebuilt image can be downloaded from: [themclg/autosub:latest](https://hub.docker.com/layers/themclg/autosub/latest/images/sha256-7595f100b774b3835ad02d05df27992b6bc70fbf10927c835e1d2a17907a05d4?context=repo). The image has built-in support for cuda/GPU transcribing but you will need to map your GPU in your `docker-compose.yml`.
+
+Example `docker-compose.yml`:
+```yaml
+version: '3.3'
+services:
+  autosub:
+    container_name: autosub
+    image: themclg/autosub:latest
+    hostname: autosub
+    ports:
+      - 8765:8765
+    environment:
+      - "PLEX_URL=http://127.0.0.1:32400" #Plex server URL including http(s):// and port
+      - "PLEX_TOKEN=xxxxxxxxxxxxxx" #Your Plex token
+      - "WEBHOOK_PORT=8765" #Port to listen for webhooks
+      - "WHISPER_MODEL=large-v3" #tiny, base, small, medium, large, large-v2, large-v3, large-v3-turbo
+      - "WHISPER_DEVICE=cuda" #cpu or cuda for Nvidia GPU's
+      - "WHISPER_COMPUTETYPE=float16" #Recommended: int8 for cpu or float16 for cuda
+      - "WHISPER_CPUTHREADS=2" #Number of CPU threads to use (only applicable for cpu)
+      - "WHISPER_TASK=translate" #transcribe or translate
+      - "SKIP_LANGUAGES=en" #Example: 'en, de, fr'
+      - "SKIP_SUB_LANGUAGES=en" #Example: 'en, de, fr'
+      - "DEBUG_LOGGING=False" #Set to True to enable debug logging
+    restart: unless-stopped
+```
 
 ### Plex 
 **Webhook**
@@ -64,7 +89,7 @@ Finding your token is pretty simple:
 | `WHISPER_DEVICE`   | `cuda`                     | Compute device for Whisper. Options: `cpu` or `cuda` for Nvidia GPU's. Note: using `cuda` requires cuBLAS and cuDNN 8 for CUDA 12 installed. |
 | `WHISPER_COMPUTETYPE` | `float16`                | Recommended: `int8` for CPU or `float16` for CUDA.         |
 | `WHISPER_CPUTHREADS` | `2`                       | Number of CPU threads to use (only applicable for CPU).   |
-| `WHISPER_TASK`       | `translate`                | Whisper task. Options: `transcribe` or `translate` to translate the text to English. |
+| `WHISPER_TASK`       | `translate`                | Whisper task. Options: `transcribe` (transcribes in the original audio language) or `translate` (transcribes and translates the audio directly into English). |
 | `SKIP_LANGUAGES`    | `en`                    | Comma seperated list containing audio languages for which you do **NOT** want to generate subtitles. Supports two-letter and three-letter lowercase abbreviation, see [ISO 639](https://en.wikipedia.org/wiki/ISO_639). Set to `None` to generate subtitles for all audio languages. Example: `eng, de, nl`.                     |
 | `SKIP_SUB_LANGUAGES`    | `en`                    | Comma seperated list containing subtitle languages. Will **NOT** generate a subtitle if the file has an existing subtitle matching this two-letter or three-letter lowercase abbreviation, see [ISO 639](https://en.wikipedia.org/wiki/ISO_639). Set to `None` to generate subtitles regardless of existing subtitles. Example: `eng, de, nl`.                     |
 | `DEBUG_LOGGING`    | `False`                    | Set to `True` to enable debug logging.                     |
