@@ -6,6 +6,7 @@ import json
 import requests
 import xml.etree.ElementTree as ET
 import concurrent.futures
+import atexit
 from tasks import start_transcription
 
 def str_to_bool(s):
@@ -22,13 +23,15 @@ WEBHOOK_PORT = int(os.getenv("WEBHOOK_PORT", 8765))
 SKIP_LANGUAGES = str_to_list(os.getenv("SKIP_LANGUAGES", "en"))
 SKIP_SUB_LANGUAGES = str_to_list(os.getenv("SKIP_SUB_LANGUAGES", "en"))
 DEBUG_LOGGING = str_to_bool(os.getenv("DEBUG_LOGGING", "False"))
+MAX_WORKERS = int(os.getenv("WEBHOOK_EXECUTOR_MAX_WORKERS", 1))
 
 # Logging configuration
 logging.basicConfig(stream=sys.stderr, level=logging.DEBUG if DEBUG_LOGGING else logging.INFO)
 log = logging.getLogger("autosub")
 
-# Thread pool for background tasks
-executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+# Thread pool for background tasks - 1 worker is ideal as transcription is heavily CPU/GPU bound
+executor = concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS)
+atexit.register(lambda: executor.shutdown(wait=False))
 
 app = Flask(__name__)
 
@@ -61,7 +64,7 @@ def get_metadata(payload):
 
         url = f"{PLEX_URL}/library/metadata/{rating_key}"
         headers = {"X-Plex-Token": PLEX_TOKEN}
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=10)
         if response.status_code == 200:
             filepath = parse_plex_xml(response.content, SKIP_LANGUAGES, SKIP_SUB_LANGUAGES)
             if filepath:
@@ -69,6 +72,8 @@ def get_metadata(payload):
                 executor.submit(start_transcription, filepath)
         else:
             log.error(f"Request error: {response.status_code}")
+    except requests.RequestException as e:
+        log.error(f"Network error fetching metadata: {e}")
     except Exception as e:
         log.error(f"Error fetching metadata: {e}")
 
@@ -97,8 +102,8 @@ def parse_plex_xml(response, skip_languages, skip_sub_languages):
                     return False
 
         return filepath
-    except ET.ParseError:
-        log.error("Invalid XML received from Plex")
+    except Exception as e:
+        log.error(f"Error parsing XML from Plex: {e}")
         return False
 
 if __name__ == "__main__":

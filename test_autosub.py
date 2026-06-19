@@ -49,7 +49,7 @@ class TestAutosub(unittest.TestCase):
         payload = {'Metadata': {'ratingKey': '1234'}}
         autosub.get_metadata(payload)
 
-        mock_requests_get.assert_called_once_with('http://localhost:32400/library/metadata/1234', headers={'X-Plex-Token': 'testtoken'})
+        mock_requests_get.assert_called_once_with('http://localhost:32400/library/metadata/1234', headers={'X-Plex-Token': 'testtoken'}, timeout=10)
         mock_parse_plex_xml.assert_called_once_with(b'<xml></xml>', autosub.SKIP_LANGUAGES, autosub.SKIP_SUB_LANGUAGES)
         mock_submit.assert_called_once_with(autosub.start_transcription, '/path/to/media.mp4')
 
@@ -133,6 +133,22 @@ class TestAutosub(unittest.TestCase):
         result = autosub.parse_plex_xml(xml_data, ['en'], ['en'])
         self.assertEqual(result, '/path/to/media.mp4')
 
+
+    def test_str_to_bool(self):
+        self.assertTrue(autosub.str_to_bool("True"))
+        self.assertTrue(autosub.str_to_bool("true"))
+        self.assertTrue(autosub.str_to_bool("1"))
+        self.assertFalse(autosub.str_to_bool("False"))
+        self.assertFalse(autosub.str_to_bool("false"))
+        self.assertFalse(autosub.str_to_bool("0"))
+        self.assertFalse(autosub.str_to_bool("invalid"))
+
+    def test_str_to_list(self):
+        self.assertIsNone(autosub.str_to_list("None"))
+        self.assertIsNone(autosub.str_to_list(""))
+        self.assertEqual(autosub.str_to_list("a, b"), ["a", "b"])
+        self.assertEqual(autosub.str_to_list("a,b"), ["a", "b"])
+        self.assertEqual(autosub.str_to_list("a"), ["a"])
 
 if __name__ == '__main__':
     unittest.main()
