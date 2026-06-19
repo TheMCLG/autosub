@@ -12,13 +12,9 @@ Inspired by [McCloudS](https://github.com/McCloudS) / [subgen](https://github.co
 
 - Supports CPU or Nvidia GPU's for transcribing.
 - Uses [stable-ts](https://github.com/jianfch/stable-ts) and [faster-whisper](https://github.com/guillaumekln/faster-whisper) for efficient audio transcription and translation to English.
-- Saves the transcription to an SRT file in the media's directory for use as subtitles.
+- Uploads the transcription directly to the Plex server as an SRT subtitle track.
 
 ## Limitations
-> [!IMPORTANT]
-> Make sure your media file paths are setup correctly.
-- Requires media folder paths to match relative to the Plex server.
-If your Plex media path is `/media/movies/video.mp4`, then autosub needs to be able to reach that media using the same path.
 - Only translates into English subtitles.
 - Currently skips any media that contains English audio.
 
@@ -78,7 +74,7 @@ Finding your token is pretty simple:
 - [x] Add configurable option to skip transcribing based on existing audio languages.
 - [x] Add configurable option to skip transcribing based on existing subtitle languages.
 - [x] Improve audio stream detection/selection.
-- [ ] Remove dependency on access to Plex media paths.
+- [x] Remove dependency on access to Plex media paths.
 - [ ] Add scheduled Plex library scanning.
 - [ ] Add [homepage](https://github.com/gethomepage/homepage) integration.
 - [ ] General clean-up.
