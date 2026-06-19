@@ -44,14 +44,14 @@ class TestAutosub(unittest.TestCase):
         mock_response.content = b'<xml></xml>'
         mock_requests_get.return_value = mock_response
 
-        mock_parse_plex_xml.return_value = '/path/to/media.mp4'
+        mock_parse_plex_xml.return_value = '/library/parts/5678/12345/file.mp4'
 
         payload = {'Metadata': {'ratingKey': '1234'}}
         autosub.get_metadata(payload)
 
         mock_requests_get.assert_called_once_with('http://localhost:32400/library/metadata/1234', headers={'X-Plex-Token': 'testtoken'}, timeout=10)
         mock_parse_plex_xml.assert_called_once_with(b'<xml></xml>', autosub.SKIP_LANGUAGES, autosub.SKIP_SUB_LANGUAGES)
-        mock_submit.assert_called_once_with(autosub.start_transcription, '/path/to/media.mp4')
+        mock_submit.assert_called_once_with(autosub.start_transcription, '1234', '/library/parts/5678/12345/file.mp4', 'http://localhost:32400', 'testtoken')
 
     @patch('autosub.executor.submit')
     @patch('autosub.parse_plex_xml')
@@ -86,7 +86,7 @@ class TestAutosub(unittest.TestCase):
     def test_parse_plex_xml_skip_audio_lang(self):
         xml_data = '''
         <MediaContainer>
-            <Part file="/path/to/media.mp4" />
+            <Part key="/library/parts/123/123/file.mp4" />
             <Stream streamType="2" channels="2" languageTag="de" languageCode="de" />
         </MediaContainer>
         '''
@@ -96,7 +96,7 @@ class TestAutosub(unittest.TestCase):
     def test_parse_plex_xml_skip_sub_lang(self):
         xml_data = '''
         <MediaContainer>
-            <Part file="/path/to/media.mp4" />
+            <Part key="/library/parts/123/123/file.mp4" />
             <Stream streamType="2" channels="2" languageTag="es" languageCode="es" />
             <Stream codec="srt" languageTag="en" languageCode="en" />
         </MediaContainer>
@@ -107,12 +107,12 @@ class TestAutosub(unittest.TestCase):
     def test_parse_plex_xml_success(self):
         xml_data = '''
         <MediaContainer>
-            <Part file="/path/to/media.mp4" />
+            <Part key="/library/parts/123/123/file.mp4" />
             <Stream streamType="2" channels="2" languageTag="es" languageCode="es" />
         </MediaContainer>
         '''
         result = autosub.parse_plex_xml(xml_data, ['en'], ['en'])
-        self.assertEqual(result, '/path/to/media.mp4')
+        self.assertEqual(result, '/library/parts/123/123/file.mp4')
 
     def test_parse_plex_xml_no_filepath(self):
         xml_data = '''
@@ -126,12 +126,12 @@ class TestAutosub(unittest.TestCase):
     def test_parse_plex_xml_missing_language_attributes(self):
         xml_data = '''
         <MediaContainer>
-            <Part file="/path/to/media.mp4" />
+            <Part key="/library/parts/123/123/file.mp4" />
             <Stream streamType="2" channels="2" />
         </MediaContainer>
         '''
         result = autosub.parse_plex_xml(xml_data, ['en'], ['en'])
-        self.assertEqual(result, '/path/to/media.mp4')
+        self.assertEqual(result, '/library/parts/123/123/file.mp4')
 
     def test_str_to_bool(self):
         self.assertTrue(autosub.str_to_bool("True"))

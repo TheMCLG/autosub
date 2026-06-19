@@ -73,10 +73,10 @@ def get_metadata(payload):
         headers = {"X-Plex-Token": PLEX_TOKEN}
         response = requests.get(url, headers=headers, timeout=10)
         if response.status_code == 200:
-            filepath = parse_plex_xml(response.content, SKIP_LANGUAGES, SKIP_SUB_LANGUAGES)
-            if filepath is not None:
-                log.info(f"Creating task for {filepath}")
-                executor.submit(start_transcription, filepath)
+            part_key = parse_plex_xml(response.content, SKIP_LANGUAGES, SKIP_SUB_LANGUAGES)
+            if part_key is not None:
+                log.info(f"Creating task for {rating_key} ({part_key})")
+                executor.submit(start_transcription, rating_key, part_key, PLEX_URL, PLEX_TOKEN)
         else:
             log.error(f"Request error: {response.status_code}")
     except requests.RequestException as e:
@@ -86,18 +86,18 @@ def get_metadata(payload):
 
 def parse_plex_xml(response, skip_languages, skip_sub_languages):
     """
-    Parses XML metadata from Plex to determine the file path and streams.
-    Returns the file path string if valid, or None if skipped or missing.
+    Parses XML metadata from Plex to determine the part key and streams.
+    Returns the part key string if valid, or None if skipped or missing.
     """
     try:
         root = ET.fromstring(response)
-        filepath = None
+        part_key = None
         for part in root.iter("Part"):
-            if "file" in part.attrib:
-                filepath = part.attrib["file"]
+            if "key" in part.attrib:
+                part_key = part.attrib["key"]
                 break
 
-        if not filepath:
+        if not part_key:
             return None
 
         for stream in root.iter("Stream"):
@@ -112,7 +112,7 @@ def parse_plex_xml(response, skip_languages, skip_sub_languages):
                 if skip_sub_languages and any(l in (lang_tag, lang_code) for l in skip_sub_languages):
                     return None
 
-        return filepath
+        return part_key
     except Exception as e:
         log.exception(f"Error parsing XML from Plex: {e}")
         return None
