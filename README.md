@@ -96,13 +96,11 @@ Finding your token is pretty simple:
 | `WEBHOOK_EXECUTOR_MAX_WORKERS` | `1` | Controls the max concurrent background transcription tasks. Because `faster-whisper` is highly CPU/GPU bound, concurrency > 1 may cause conflicts or out-of-memory errors. The Flask/Gunicorn server will rapidly accept incoming webhooks and queue them here to be processed sequentially. Leave at `1`. |
 
 ## Backlog
-- [x] Add configurable option to skip transcribing based on existing audio languages.
-- [x] Add configurable option to skip transcribing based on existing subtitle languages.
-- [x] Improve audio stream detection/selection.
-- [x] Remove dependency on access to Plex media paths.
-- [ ] Add scheduled Plex library scanning.
-- [ ] Add [homepage](https://github.com/gethomepage/homepage) integration.
-- [ ] General clean-up.
+- [ ] Add support for Jellyfin/Emby webhooks.
+- [ ] Create a Web UI for monitoring transcription status.
+- [ ] Support custom target languages for translation besides English.
+- [ ] Implement a retry mechanism for failed transcription jobs.
+- [ ] Add support for hardware acceleration via OpenVINO or DirectML for non-NVIDIA GPUs.
 
 ## Supported Audio Languages
 Afrikaans, Arabic, Armenian, Azerbaijani, Belarusian, Bosnian, Bulgarian, Catalan, Chinese, Croatian, Czech, Danish, Dutch, English, Estonian, Finnish, French, Galician, German, Greek, Hebrew, Hindi, Hungarian, Icelandic, Indonesian, Italian, Japanese, Kannada, Kazakh, Korean, Latvian, Lithuanian, Macedonian, Malay, Marathi, Maori, Nepali, Norwegian, Persian, Polish, Portuguese, Romanian, Russian, Serbian, Slovak, Slovenian, Spanish, Swahili, Swedish, Tagalog, Tamil, Thai, Turkish, Ukrainian, Urdu, Vietnamese, and Welsh.
