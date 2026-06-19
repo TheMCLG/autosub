@@ -44,7 +44,7 @@ def webhook():
     is 'library.new', it logs the event and continues processing the new library item.
     Otherwise, the event type is logged and discarded.
     """
-    if "PlexMediaServer" in request.headers.get("User-Agent"):
+    if "PlexMediaServer" in request.headers.get("User-Agent", ""):
         log.debug(request.form["payload"])
         payload = json.loads(request.form["payload"])
         event = payload["event"]
@@ -106,8 +106,8 @@ def parse_plex_xml(response, skip_languages, skip_sub_languages):
                     if skip_languages:
                         for language in skip_languages:
                             if (
-                                stream.attrib["languageTag"] == language
-                                or stream.attrib["languageCode"] == language
+                                stream.attrib.get("languageTag") == language
+                                or stream.attrib.get("languageCode") == language
                             ):
                                 log.info(f"Audio language is {language}, skipping")
                                 return False
@@ -125,8 +125,8 @@ def parse_plex_xml(response, skip_languages, skip_sub_languages):
                         if skip_sub_languages:
                             for sublang in skip_sub_languages:
                                 if (
-                                    stream.attrib["languageTag"] == sublang
-                                    or stream.attrib["languageCode"] == sublang
+                                    stream.attrib.get("languageTag") == sublang
+                                    or stream.attrib.get("languageCode") == sublang
                                 ):
                                     log.info(
                                         f"Subtitle language is {sublang}, skipping"
@@ -143,4 +143,5 @@ def parse_plex_xml(response, skip_languages, skip_sub_languages):
         return False
 
 
-app.run(debug=DEBUG_LOGGING, host="0.0.0.0", port=int(WEBHOOK_PORT))
+if __name__ == "__main__":
+    app.run(debug=DEBUG_LOGGING, host="0.0.0.0", port=int(WEBHOOK_PORT))
