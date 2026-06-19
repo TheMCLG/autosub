@@ -1,4 +1,4 @@
-FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
+FROM nvidia/cuda:12.2.2-cudnn8-runtime-ubuntu22.04
 WORKDIR /autosub
 RUN apt-get update && apt-get install -y python3 python3-pip ffmpeg
 RUN pip install flask

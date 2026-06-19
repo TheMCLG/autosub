@@ -23,7 +23,7 @@ If your Plex media path is `/media/movies/video.mp4`, then autosub needs to be a
 
 ### Manual
 > [!IMPORTANT]
-> GPU execution requires these NVIDIA libraries to be installed: cuBLAS for CUDA 11 & cuDNN 8 for CUDA 11
+> GPU execution requires these NVIDIA libraries to be installed: cuBLAS for CUDA 12 & cuDNN 8 for CUDA 12
 > [Read More](https://github.com/guillaumekln/faster-whisper#gpu)
 1. Install Python3, python3-pip, and ffmpeg.
 2. Install dependencies: `pip install flask stable-ts faster-whisper requests "celery[redis]" `
@@ -62,10 +62,11 @@ Finding your token is pretty simple:
 | `PLEX_URL`         | `http://127.0.0.1:32400`    | Plex server URL including `http(s)://` and port.           |
 | `PLEX_TOKEN`       | (None)                     | Your Plex token. Must be provided.                         |
 | `WEBHOOK_PORT`     | `8765`                     | Port for the Flask server to listen for webhooks.         |
-| `WHISPER_MODEL`    | `medium`                   | Whisper model size. Options: `tiny`, `base`, `small`, `medium`, `large`. |
-| `WHISPER_DEVICE`   | `cpu`                      | Compute device for Whisper. Options: `cpu` or `cuda` for Nvidia GPU's. Note: using `cuda` requires cuBLAS and cuDNN 8 for CUDA 11 installed. |
-| `WHISPER_COMPUTETYPE` | `int8`                   | Recommended: `int8` for CPU or `float16` for CUDA.         |
+| `WHISPER_MODEL`    | `large-v3`                 | Whisper model size. Options: `tiny`, `base`, `small`, `medium`, `large`, `large-v2`, `large-v3`, `large-v3-turbo`. |
+| `WHISPER_DEVICE`   | `cuda`                     | Compute device for Whisper. Options: `cpu` or `cuda` for Nvidia GPU's. Note: using `cuda` requires cuBLAS and cuDNN 8 for CUDA 12 installed. |
+| `WHISPER_COMPUTETYPE` | `float16`                | Recommended: `int8` for CPU or `float16` for CUDA.         |
 | `WHISPER_CPUTHREADS` | `2`                       | Number of CPU threads to use (only applicable for CPU).   |
+| `WHISPER_TASK`       | `translate`                | Whisper task. Options: `transcribe` or `translate` to translate the text to English. |
 | `SKIP_LANGUAGES`    | `en`                    | Comma seperated list containing audio languages for which you do **NOT** want to generate subtitles. Supports two-letter and three-letter lowercase abbreviation, see [ISO 639](https://en.wikipedia.org/wiki/ISO_639). Set to `None` to generate subtitles for all audio languages. Example: `eng, de, nl`.                     |
 | `SKIP_SUB_LANGUAGES`    | `en`                    | Comma seperated list containing subtitle languages. Will **NOT** generate a subtitle if the file has an existing subtitle matching this two-letter or three-letter lowercase abbreviation, see [ISO 639](https://en.wikipedia.org/wiki/ISO_639). Set to `None` to generate subtitles regardless of existing subtitles. Example: `eng, de, nl`.                     |
 | `DEBUG_LOGGING`    | `False`                    | Set to `True` to enable debug logging.                     |
