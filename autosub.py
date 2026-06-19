@@ -105,10 +105,9 @@ def parse_plex_xml(response, skip_languages, skip_sub_languages):
                     log.info(f"Found an audio stream")
                     if skip_languages:
                         for language in skip_languages:
-                            if (
-                                stream.attrib["languageTag"] == language
-                                or stream.attrib["languageCode"] == language
-                            ):
+                            language_tag = stream.attrib.get("languageTag")
+                            language_code = stream.attrib.get("languageCode")
+                            if language_tag == language or language_code == language:
                                 log.info(f"Audio language is {language}, skipping")
                                 return False
                             else:
@@ -124,10 +123,9 @@ def parse_plex_xml(response, skip_languages, skip_sub_languages):
                         log.info(f"Found a subtitle stream")
                         if skip_sub_languages:
                             for sublang in skip_sub_languages:
-                                if (
-                                    stream.attrib["languageTag"] == sublang
-                                    or stream.attrib["languageCode"] == sublang
-                                ):
+                                language_tag = stream.attrib.get("languageTag")
+                                language_code = stream.attrib.get("languageCode")
+                                if language_tag == sublang or language_code == sublang:
                                     log.info(
                                         f"Subtitle language is {sublang}, skipping"
                                     )
@@ -143,4 +141,5 @@ def parse_plex_xml(response, skip_languages, skip_sub_languages):
         return False
 
 
-app.run(debug=DEBUG_LOGGING, host="0.0.0.0", port=int(WEBHOOK_PORT))
+if __name__ == "__main__":
+    app.run(debug=DEBUG_LOGGING, host="0.0.0.0", port=int(WEBHOOK_PORT))
