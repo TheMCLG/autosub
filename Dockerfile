@@ -3,7 +3,7 @@ WORKDIR /autosub
 RUN apt-get update && apt-get install -y python3 python3-pip ffmpeg
 COPY requirements.txt .
 RUN pip install -r requirements.txt
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONUNBUFFERED=1
 COPY autosub.py .
 COPY tasks.py .
 COPY run.sh .
