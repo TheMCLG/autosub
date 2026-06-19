@@ -1,7 +1,5 @@
 version: '3.3'
 services:
-  redis:
-    image: redis
   autosub:
     container_name: autosub
     image: themclg/autosub:latest
@@ -22,6 +20,4 @@ services:
       - "DEBUG_LOGGING=False" #Set to True to enable debug logging
     volumes:
       - '/media:/media' #Volumes should be mapped to the same paths as your Plex server
-    depends_on:
-      - redis
     restart: unless-stopped

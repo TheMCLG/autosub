@@ -9,7 +9,7 @@ Inspired by [McCloudS](https://github.com/McCloudS) / [subgen](https://github.co
 ---
 ## Features
 - Automatically scans new Plex media for audio that is not English.
-- Basic multithreading using [celery](https://github.com/celery/celery).
+
 - Supports CPU or Nvidia GPU's for transcribing.
 - Uses [stable-ts](https://github.com/jianfch/stable-ts) and [faster-whisper](https://github.com/guillaumekln/faster-whisper) for efficient audio transcription and translation to English.
 - Saves the transcription to an SRT file in the media's directory for use as subtitles.
@@ -29,11 +29,10 @@ If your Plex media path is `/media/movies/video.mp4`, then autosub needs to be a
 > GPU execution requires these NVIDIA libraries to be installed: cuBLAS for CUDA 12 & cuDNN 8 for CUDA 12
 > [Read More](https://github.com/guillaumekln/faster-whisper#gpu)
 1. Install Python3, python3-pip, and ffmpeg.
-2. Install dependencies: `pip install flask stable-ts faster-whisper requests "celery[redis]" `
+2. Install dependencies: `pip install -r requirements.txt`
 3. Clone this repository: `git clone https://github.com/TheMCLG/autosub.git`
 4. Configure the Global Variables in `autosub.py` and `tasks.py` - see the [Variables](#Variables) table below.
-5. Run `run.sh` or start both scripts manually by running:
-   - `celery -A tasks worker --loglevel=INFO &`
+5. Run `run.sh` or start the script manually by running:
    - `python3 -u autosub.py`
 
 ### Docker
@@ -96,4 +95,3 @@ If and when I feel like it. This is a hobby project build mostly for my personal
 - [OpenAI Whisper](https://github.com/openai/whisper)
 - [stable-ts](https://github.com/jianfch/stable-ts)
 - [faster-whisper](https://github.com/guillaumekln/faster-whisper)
-- [celery](https://github.com/celery/celery)

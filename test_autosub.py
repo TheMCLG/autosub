@@ -3,7 +3,6 @@ from unittest.mock import patch, MagicMock
 import json
 import os
 
-# Set environment variables for testing before importing autosub
 os.environ["PLEX_URL"] = "http://localhost:32400"
 os.environ["PLEX_TOKEN"] = "testtoken"
 
@@ -36,10 +35,10 @@ class TestAutosub(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         mock_get_metadata.assert_not_called()
 
-    @patch('autosub.start_transcription.delay')
+    @patch('autosub.executor.submit')
     @patch('autosub.parse_plex_xml')
     @patch('autosub.requests.get')
-    def test_get_metadata_success(self, mock_requests_get, mock_parse_plex_xml, mock_start_transcription):
+    def test_get_metadata_success(self, mock_requests_get, mock_parse_plex_xml, mock_submit):
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.content = b'<xml></xml>'
@@ -52,12 +51,12 @@ class TestAutosub(unittest.TestCase):
 
         mock_requests_get.assert_called_once_with('http://localhost:32400/library/metadata/1234', headers={'X-Plex-Token': 'testtoken'})
         mock_parse_plex_xml.assert_called_once_with(b'<xml></xml>', autosub.SKIP_LANGUAGES, autosub.SKIP_SUB_LANGUAGES)
-        mock_start_transcription.assert_called_once_with('/path/to/media.mp4')
+        mock_submit.assert_called_once_with(autosub.start_transcription, '/path/to/media.mp4')
 
-    @patch('autosub.start_transcription.delay')
+    @patch('autosub.executor.submit')
     @patch('autosub.parse_plex_xml')
     @patch('autosub.requests.get')
-    def test_get_metadata_no_filepath(self, mock_requests_get, mock_parse_plex_xml, mock_start_transcription):
+    def test_get_metadata_no_filepath(self, mock_requests_get, mock_parse_plex_xml, mock_submit):
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.content = b'<xml></xml>'
@@ -68,12 +67,12 @@ class TestAutosub(unittest.TestCase):
         payload = {'Metadata': {'ratingKey': '1234'}}
         autosub.get_metadata(payload)
 
-        mock_start_transcription.assert_not_called()
+        mock_submit.assert_not_called()
 
-    @patch('autosub.start_transcription.delay')
+    @patch('autosub.executor.submit')
     @patch('autosub.requests.get')
     @patch('autosub.log.error')
-    def test_get_metadata_request_error(self, mock_log_error, mock_requests_get, mock_start_transcription):
+    def test_get_metadata_request_error(self, mock_log_error, mock_requests_get, mock_submit):
         mock_response = MagicMock()
         mock_response.status_code = 404
         mock_requests_get.return_value = mock_response
@@ -81,7 +80,7 @@ class TestAutosub(unittest.TestCase):
         payload = {'Metadata': {'ratingKey': '1234'}}
         autosub.get_metadata(payload)
 
-        mock_start_transcription.assert_not_called()
+        mock_submit.assert_not_called()
         mock_log_error.assert_called_once()
 
     def test_parse_plex_xml_skip_audio_lang(self):
@@ -131,7 +130,6 @@ class TestAutosub(unittest.TestCase):
             <Stream streamType="2" channels="2" />
         </MediaContainer>
         '''
-        # Should not throw KeyError, and should proceed normally returning the filepath
         result = autosub.parse_plex_xml(xml_data, ['en'], ['en'])
         self.assertEqual(result, '/path/to/media.mp4')
 

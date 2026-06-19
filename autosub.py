@@ -1,145 +1,105 @@
 import os
 import sys
 import logging
-from utils import str_to_bool
-from utils import str_to_list
 from flask import Flask, request, Response
 import json
 import requests
 import xml.etree.ElementTree as ET
+import concurrent.futures
 from tasks import start_transcription
+
+def str_to_bool(s):
+    return str(s).lower() in ("true", "1")
+
+def str_to_list(s):
+    if not s or s == "None": return None
+    return [x.strip() for x in s.split(',')]
 
 # Config variables
 PLEX_URL = os.getenv("PLEX_URL", "http://127.0.0.1:32400")
 PLEX_TOKEN = os.getenv("PLEX_TOKEN", "xxxxxxxxxxxxxx")
-WEBHOOK_PORT = os.getenv("WEBHOOK_PORT", 8765)
+WEBHOOK_PORT = int(os.getenv("WEBHOOK_PORT", 8765))
 SKIP_LANGUAGES = str_to_list(os.getenv("SKIP_LANGUAGES", "en"))
 SKIP_SUB_LANGUAGES = str_to_list(os.getenv("SKIP_SUB_LANGUAGES", "en"))
 DEBUG_LOGGING = str_to_bool(os.getenv("DEBUG_LOGGING", "False"))
 
 # Logging configuration
-if DEBUG_LOGGING:
-    logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
-else:
-    logging.basicConfig(stream=sys.stderr, level=logging.INFO)
+logging.basicConfig(stream=sys.stderr, level=logging.DEBUG if DEBUG_LOGGING else logging.INFO)
 log = logging.getLogger("autosub")
 
-# Debug info
-log.debug(f"PLEX_URL: {PLEX_URL}")
-log.debug(f"PLEX_TOKEN: {PLEX_TOKEN}")
-log.debug(f"WEBHOOK_PORT: {WEBHOOK_PORT}")
-log.debug(f"SKIP_LANGUAGES: {SKIP_LANGUAGES}")
-log.debug(f"SKIP_SUB_LANGUAGES: {SKIP_SUB_LANGUAGES}")
-log.debug(f"DEBUG_LOGGING: {DEBUG_LOGGING}")
+# Thread pool for background tasks
+executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
 app = Flask(__name__)
 
-
 @app.route("/webhook", methods=["POST"])
 def webhook():
-    """
-    Processes incoming Plex webhook events.
-
-    Listens for POST requests and extracts the payload. If the event type
-    is 'library.new', it logs the event and continues processing the new library item.
-    Otherwise, the event type is logged and discarded.
-    """
-    if "PlexMediaServer" in request.headers.get("User-Agent"):
-        log.debug(request.form["payload"])
-        payload = json.loads(request.form["payload"])
-        event = payload["event"]
-        if event == "library.new":
-            log.info("New library item detected")
-            get_metadata(payload)
-        else:
-            log.info(f"Discarding event type: {event}")
+    if "PlexMediaServer" in request.headers.get("User-Agent", ""):
+        try:
+            payload_str = request.form.get("payload", "{}")
+            if not payload_str:
+                payload_str = "{}"
+            payload = json.loads(payload_str)
+            if payload.get("event") == "library.new":
+                log.info("New library item detected")
+                get_metadata(payload)
+            else:
+                log.info(f"Discarding event type: {payload.get('event')}")
+        except json.JSONDecodeError:
+            log.error("Invalid JSON payload")
     else:
         log.error("Invalid User-Agent")
     return Response(status=200)
 
-
 def get_metadata(payload):
-    """
-    Fetch metadata for a given payload from Plex.
+    try:
+        # Validate ratingKey exists and is string or int
+        rating_key = payload.get("Metadata", {}).get("ratingKey")
+        if not rating_key:
+            log.error("No ratingKey found in payload")
+            return
 
-    This function queries the Plex server to retrieve the full file path and
-    audio language for the library item in the payload. If the primary audio
-    language of the file is not English, it initiates a transcription task
-    for that file.
-
-    Note: PLEX_URL and PLEX_TOKEN need to be set appropriately before making a request.
-    """
-    url = f"{PLEX_URL}/library/metadata/{payload['Metadata']['ratingKey']}"  # [Metadata][ratingKey] contains the ID for the new library item
-    headers = {
-        "X-Plex-Token": PLEX_TOKEN,
-    }
-    log.debug(f"Requesting metadata from {url}")
-    response = requests.get(url, headers=headers)  # TODO: Add error handling
-    log.info("Reveived metadata response")
-    log.debug(response.content)
-    if response.status_code == 200:
-        filepath = parse_plex_xml(response.content, SKIP_LANGUAGES, SKIP_SUB_LANGUAGES)
-        if filepath:
-            log.info(f"Creating task for {filepath}")
-            start_transcription.delay(filepath)
-    else:
-        log.error(f"Request error: {response.status_code}")
-
+        url = f"{PLEX_URL}/library/metadata/{rating_key}"
+        headers = {"X-Plex-Token": PLEX_TOKEN}
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            filepath = parse_plex_xml(response.content, SKIP_LANGUAGES, SKIP_SUB_LANGUAGES)
+            if filepath:
+                log.info(f"Creating task for {filepath}")
+                executor.submit(start_transcription, filepath)
+        else:
+            log.error(f"Request error: {response.status_code}")
+    except Exception as e:
+        log.error(f"Error fetching metadata: {e}")
 
 def parse_plex_xml(response, skip_languages, skip_sub_languages):
-    root = ET.fromstring(response)
-    filepath = ""
+    try:
+        root = ET.fromstring(response)
+        filepath = ""
+        for part in root.iter("Part"):
+            if "file" in part.attrib:
+                filepath = part.attrib["file"]
+                break
 
-    # Check if the Plex metadata contains a filepath
-    for part in root.iter("Part"):
-        for att in part.attrib:
-            if att == "file":
-                filepath = part.attrib[att]
-                log.info(f"Filepath is {filepath}")
+        if not filepath:
+            return False
 
-    if filepath:
-        # Check for audio streams and return False if they match one of the audio languages we want to skip
         for stream in root.iter("Stream"):
-            for att in stream.attrib:
-                if att == "channels":
-                    log.info(f"Found an audio stream")
-                    if skip_languages:
-                        for language in skip_languages:
-                            language_tag = stream.attrib.get("languageTag")
-                            language_code = stream.attrib.get("languageCode")
-                            if language_tag == language or language_code == language:
-                                log.info(f"Audio language is {language}, skipping")
-                                return False
-                            else:
-                                log.info(
-                                    f"Audio language is not {language}, continuing"
-                                )
-
-        # Check for subtitles and return False if they match one of the sub languages we want to skip
-        for stream in root.iter("Stream"):
-            for att in stream.attrib:
-                if att == "codec":
-                    if stream.attrib["codec"] == "srt":
-                        log.info(f"Found a subtitle stream")
-                        if skip_sub_languages:
-                            for sublang in skip_sub_languages:
-                                language_tag = stream.attrib.get("languageTag")
-                                language_code = stream.attrib.get("languageCode")
-                                if language_tag == sublang or language_code == sublang:
-                                    log.info(
-                                        f"Subtitle language is {sublang}, skipping"
-                                    )
-                                    return False
-                                else:
-                                    log.info(
-                                        f"Subtitle language is not {sublang}, continuing"
-                                    )
+            if stream.attrib.get("streamType") == "2" or stream.attrib.get("channels"):
+                lang_tag = stream.attrib.get("languageTag")
+                lang_code = stream.attrib.get("languageCode")
+                if skip_languages and any(l in (lang_tag, lang_code) for l in skip_languages):
+                    return False
+            elif stream.attrib.get("codec") == "srt":
+                lang_tag = stream.attrib.get("languageTag")
+                lang_code = stream.attrib.get("languageCode")
+                if skip_sub_languages and any(l in (lang_tag, lang_code) for l in skip_sub_languages):
+                    return False
 
         return filepath
-    else:
-        log.info("No filepath found, skipping")
+    except ET.ParseError:
+        log.error("Invalid XML received from Plex")
         return False
 
-
 if __name__ == "__main__":
-    app.run(debug=DEBUG_LOGGING, host="0.0.0.0", port=int(WEBHOOK_PORT))
+    app.run(debug=DEBUG_LOGGING, host="0.0.0.0", port=WEBHOOK_PORT)
