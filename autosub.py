@@ -6,7 +6,7 @@ import json
 import requests
 import xml.etree.ElementTree as ET
 import concurrent.futures
-import signal
+import atexit
 from tasks import start_transcription
 
 def str_to_bool(s):
@@ -32,15 +32,13 @@ log = logging.getLogger("autosub")
 # Thread pool for background tasks - 1 worker is ideal as transcription is heavily CPU/GPU bound
 executor = concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS)
 
-# Graceful shutdown handler
-def graceful_shutdown(signum, frame):
-    log.info("Received shutdown signal. Waiting for active transcriptions to finish...")
+# Graceful shutdown handler managed by Gunicorn's worker exit process
+def graceful_shutdown():
+    log.info("Worker shutting down. Waiting for active transcriptions to finish...")
     executor.shutdown(wait=True)
     log.info("Shutdown complete.")
-    sys.exit(0)
 
-signal.signal(signal.SIGTERM, graceful_shutdown)
-signal.signal(signal.SIGINT, graceful_shutdown)
+atexit.register(graceful_shutdown)
 
 app = Flask(__name__)
 
