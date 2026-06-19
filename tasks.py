@@ -1,9 +1,8 @@
 import os
 import sys
 import logging
-from utils import str_to_bool
+import threading
 from time import perf_counter
-from celery import Celery
 import stable_whisper
 
 # Config variables
@@ -12,44 +11,40 @@ WHISPER_DEVICE = os.getenv("WHISPER_DEVICE", "cpu")
 WHISPER_COMPUTETYPE = os.getenv("WHISPER_COMPUTETYPE", "int8")
 WHISPER_CPUTHREADS = os.getenv("WHISPER_CPUTHREADS", 2)
 WHISPER_TASK = os.getenv("WHISPER_TASK", "translate")
-DEBUG_LOGGING = str_to_bool(os.getenv("DEBUG_LOGGING", "False"))
 
-# Logging configuration
-if DEBUG_LOGGING:
-    logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
-else:
-    logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 log = logging.getLogger("autosub")
 
-# Debug info
-log.debug(f"WHISPER_MODEL: {WHISPER_MODEL}")
-log.debug(f"WHISPER_DEVICE: {WHISPER_DEVICE}")
-log.debug(f"WHISPER_COMPUTETYPE: {WHISPER_COMPUTETYPE}")
-log.debug(f"WHISPER_CPUTHREADS: {WHISPER_CPUTHREADS}")
+# Global singleton for the model and locks for thread safety
+_MODEL = None
+_MODEL_INIT_LOCK = threading.Lock()
+_TRANSCRIPTION_LOCK = threading.Lock()
 
-app = Celery("tasks", broker="redis://redis")
+def get_model():
+    global _MODEL
+    if _MODEL is None:
+        with _MODEL_INIT_LOCK:
+            if _MODEL is None:
+                log.info(f"Loading whisper model {WHISPER_MODEL}...")
+                _MODEL = stable_whisper.load_faster_whisper(
+                    WHISPER_MODEL,
+                    device=WHISPER_DEVICE,
+                    compute_type=WHISPER_COMPUTETYPE,
+                    cpu_threads=int(WHISPER_CPUTHREADS),
+                )
+                log.info("Whisper model loaded successfully.")
+    return _MODEL
 
-
-@app.task
 def start_transcription(filepath):
-    """
-    Transcribe and translate the audio of a given video file and save the transcription to an SRT format.
-    Note: The current implementation assumes that the file path matches relative to the Plex server.
-    """
-    model = stable_whisper.load_faster_whisper(
-        WHISPER_MODEL,
-        device=WHISPER_DEVICE,
-        compute_type=WHISPER_COMPUTETYPE,
-        cpu_threads=int(WHISPER_CPUTHREADS),
-    )
     try:
+        model = get_model()
         start_time = perf_counter()
         log.info(f"Starting transcription for {filepath}")
-        result = model.transcribe_stable(filepath, task=WHISPER_TASK, vad=True)
-        result.to_srt_vtt(
-            filepath.rsplit(".", 1)[0] + ".aigen.en.srt", word_level=False
-        )
-        elapsed_time = perf_counter() - start_time
-        log.info(f"Transcription for {filepath} completed in {elapsed_time} seconds")
+
+        # Ensure only one thread is actively transcribing on the GPU/CPU at a time
+        with _TRANSCRIPTION_LOCK:
+            result = model.transcribe_stable(filepath, task=WHISPER_TASK, vad=True)
+
+        result.to_srt_vtt(filepath.rsplit(".", 1)[0] + ".aigen.en.srt", word_level=False)
+        log.info(f"Transcription for {filepath} completed in {perf_counter() - start_time} seconds")
     except Exception as e:
-        log.error(f"Error processing {filepath}: {e}")
+        log.exception(f"Error processing {filepath}: {e}")

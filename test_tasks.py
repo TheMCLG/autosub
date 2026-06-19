@@ -4,6 +4,9 @@ import os
 import tasks
 
 class TestTasks(unittest.TestCase):
+    def setUp(self):
+        # Reset the singleton before each test
+        tasks._MODEL = None
 
     @patch('tasks.stable_whisper.load_faster_whisper')
     def test_start_transcription_success(self, mock_load_faster_whisper):

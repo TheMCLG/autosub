@@ -9,7 +9,7 @@ Inspired by [McCloudS](https://github.com/McCloudS) / [subgen](https://github.co
 ---
 ## Features
 - Automatically scans new Plex media for audio that is not English.
-- Basic multithreading using [celery](https://github.com/celery/celery).
+
 - Supports CPU or Nvidia GPU's for transcribing.
 - Uses [stable-ts](https://github.com/jianfch/stable-ts) and [faster-whisper](https://github.com/guillaumekln/faster-whisper) for efficient audio transcription and translation to English.
 - Saves the transcription to an SRT file in the media's directory for use as subtitles.
@@ -29,12 +29,11 @@ If your Plex media path is `/media/movies/video.mp4`, then autosub needs to be a
 > GPU execution requires these NVIDIA libraries to be installed: cuBLAS for CUDA 12 & cuDNN 8 for CUDA 12
 > [Read More](https://github.com/guillaumekln/faster-whisper#gpu)
 1. Install Python3, python3-pip, and ffmpeg.
-2. Install dependencies: `pip install flask stable-ts faster-whisper requests "celery[redis]" `
+2. Install dependencies: `pip install -r requirements.txt`
 3. Clone this repository: `git clone https://github.com/TheMCLG/autosub.git`
 4. Configure the Global Variables in `autosub.py` and `tasks.py` - see the [Variables](#Variables) table below.
-5. Run `run.sh` or start both scripts manually by running:
-   - `celery -A tasks worker --loglevel=INFO &`
-   - `python3 -u autosub.py`
+5. Run `run.sh` or start the script manually by running:
+   - `python3 -u autosub.py` (For production workloads it is highly recommended to run using the included `run.sh` script which leverages Gunicorn with a single worker process `-w 1` to prevent loading duplicate models into GPU memory)
 
 ### Docker
 The Dockerfile can be found in this repo, alongside an example `docker-compose.yml`.
@@ -73,6 +72,7 @@ Finding your token is pretty simple:
 | `SKIP_LANGUAGES`    | `en`                    | Comma seperated list containing audio languages for which you do **NOT** want to generate subtitles. Supports two-letter and three-letter lowercase abbreviation, see [ISO 639](https://en.wikipedia.org/wiki/ISO_639). Set to `None` to generate subtitles for all audio languages. Example: `eng, de, nl`.                     |
 | `SKIP_SUB_LANGUAGES`    | `en`                    | Comma seperated list containing subtitle languages. Will **NOT** generate a subtitle if the file has an existing subtitle matching this two-letter or three-letter lowercase abbreviation, see [ISO 639](https://en.wikipedia.org/wiki/ISO_639). Set to `None` to generate subtitles regardless of existing subtitles. Example: `eng, de, nl`.                     |
 | `DEBUG_LOGGING`    | `False`                    | Set to `True` to enable debug logging.                     |
+| `WEBHOOK_EXECUTOR_MAX_WORKERS` | `1` | Controls the max concurrent background transcription tasks. Because `faster-whisper` is highly CPU/GPU bound, concurrency > 1 may cause conflicts or out-of-memory errors. The Flask/Gunicorn server will rapidly accept incoming webhooks and queue them here to be processed sequentially. Leave at `1`. |
 
 ## Backlog
 - [x] Add configurable option to skip transcribing based on existing audio languages.
@@ -96,4 +96,3 @@ If and when I feel like it. This is a hobby project build mostly for my personal
 - [OpenAI Whisper](https://github.com/openai/whisper)
 - [stable-ts](https://github.com/jianfch/stable-ts)
 - [faster-whisper](https://github.com/guillaumekln/faster-whisper)
-- [celery](https://github.com/celery/celery)

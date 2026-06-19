@@ -2,4 +2,4 @@ flask
 stable-ts
 faster-whisper
 requests
-celery[redis]
+gunicorn
