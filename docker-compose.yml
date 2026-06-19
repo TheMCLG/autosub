@@ -12,10 +12,11 @@ services:
       - "PLEX_URL=http://127.0.0.1:32400" #Plex server URL including http(s):// and port
       - "PLEX_TOKEN=xxxxxxxxxxxxxx" #Your Plex token
       - "WEBHOOK_PORT=8765" #Port to listen for webhooks
-      - "WHISPER_MODEL=medium" #tiny, base, small, medium, large
-      - "WHISPER_DEVICE=cpu" #cpu or cuda for Nvidia GPU's
-      - "WHISPER_COMPUTETYPE=int8" #Recommended: int8 for cpu or float16 for cuda
+      - "WHISPER_MODEL=large-v3" #tiny, base, small, medium, large, large-v2, large-v3, large-v3-turbo
+      - "WHISPER_DEVICE=cuda" #cpu or cuda for Nvidia GPU's
+      - "WHISPER_COMPUTETYPE=float16" #Recommended: int8 for cpu or float16 for cuda
       - "WHISPER_CPUTHREADS=2" #Number of CPU threads to use (only applicable for cpu)
+      - "WHISPER_TASK=translate" #transcribe or translate
       - "SKIP_LANGUAGES=en" #Example: 'en, de, fr'
       - "SKIP_SUB_LANGUAGES=en" #Example: 'en, de, fr'
       - "DEBUG_LOGGING=False" #Set to True to enable debug logging

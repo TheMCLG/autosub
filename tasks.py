@@ -11,6 +11,7 @@ WHISPER_MODEL = os.getenv("WHISPER_MODEL", "medium")
 WHISPER_DEVICE = os.getenv("WHISPER_DEVICE", "cpu")
 WHISPER_COMPUTETYPE = os.getenv("WHISPER_COMPUTETYPE", "int8")
 WHISPER_CPUTHREADS = os.getenv("WHISPER_CPUTHREADS", 2)
+WHISPER_TASK = os.getenv("WHISPER_TASK", "translate")
 DEBUG_LOGGING = str_to_bool(os.getenv("DEBUG_LOGGING", "False"))
 
 # Logging configuration
@@ -44,7 +45,7 @@ def start_transcription(filepath):
     try:
         start_time = perf_counter()
         log.info(f"Starting transcription for {filepath}")
-        result = model.transcribe_stable(filepath, task="translate", vad=True)
+        result = model.transcribe_stable(filepath, task=WHISPER_TASK, vad=True)
         result.to_srt_vtt(
             filepath.rsplit(".", 1)[0] + ".aigen.en.srt", word_level=False
         )
