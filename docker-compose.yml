@@ -1,7 +1,5 @@
 version: '3.3'
 services:
-  redis:
-    image: redis
   autosub:
     container_name: autosub
     image: themclg/autosub:latest
@@ -16,12 +14,7 @@ services:
       - "WHISPER_DEVICE=cuda" #cpu or cuda for Nvidia GPU's
       - "WHISPER_COMPUTETYPE=float16" #Recommended: int8 for cpu or float16 for cuda
       - "WHISPER_CPUTHREADS=2" #Number of CPU threads to use (only applicable for cpu)
-      - "WHISPER_TASK=translate" #transcribe or translate
-      - "SKIP_LANGUAGES=en" #Example: 'en, de, fr'
-      - "SKIP_SUB_LANGUAGES=en" #Example: 'en, de, fr'
       - "DEBUG_LOGGING=False" #Set to True to enable debug logging
     volumes:
       - '/media:/media' #Volumes should be mapped to the same paths as your Plex server
-    depends_on:
-      - redis
     restart: unless-stopped

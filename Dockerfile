@@ -5,12 +5,7 @@ RUN pip install flask
 RUN pip install stable-ts
 RUN pip install faster-whisper
 RUN pip install requests
-RUN pip install "celery[redis]"
 ENV PYTHONUNBUFFERED 1
 COPY autosub.py .
-COPY tasks.py .
-COPY utils.py .
-COPY run.sh .
-RUN chmod +x run.sh
-CMD ["./run.sh"]
+CMD ["python3", "-u", "autosub.py"]
 EXPOSE 8765

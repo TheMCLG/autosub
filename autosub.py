@@ -1,38 +1,44 @@
 import os
 import sys
 import logging
-from utils import str_to_bool
-from utils import str_to_list
+from concurrent.futures import ThreadPoolExecutor
+from time import perf_counter
 from flask import Flask, request, Response
 import json
 import requests
 import xml.etree.ElementTree as ET
-from tasks import start_transcription
+import stable_whisper
+
+def str_to_bool(s):
+    return s.lower() in ["true", "1", "yes"] if isinstance(s, str) else bool(s)
 
 # Config variables
 PLEX_URL = os.getenv("PLEX_URL", "http://127.0.0.1:32400")
 PLEX_TOKEN = os.getenv("PLEX_TOKEN", "xxxxxxxxxxxxxx")
-WEBHOOK_PORT = os.getenv("WEBHOOK_PORT", 8765)
-SKIP_LANGUAGES = str_to_list(os.getenv("SKIP_LANGUAGES", "en"))
-SKIP_SUB_LANGUAGES = str_to_list(os.getenv("SKIP_SUB_LANGUAGES", "en"))
+WEBHOOK_PORT = int(os.getenv("WEBHOOK_PORT", 8765))
+WHISPER_MODEL = os.getenv("WHISPER_MODEL", "medium")
+WHISPER_DEVICE = os.getenv("WHISPER_DEVICE", "cpu")
+WHISPER_COMPUTETYPE = os.getenv("WHISPER_COMPUTETYPE", "int8")
+WHISPER_CPUTHREADS = int(os.getenv("WHISPER_CPUTHREADS", 2))
 DEBUG_LOGGING = str_to_bool(os.getenv("DEBUG_LOGGING", "False"))
 
 # Logging configuration
-if DEBUG_LOGGING:
-    logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
-else:
-    logging.basicConfig(stream=sys.stderr, level=logging.INFO)
+logging.basicConfig(
+    stream=sys.stderr,
+    level=logging.DEBUG if DEBUG_LOGGING else logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 log = logging.getLogger("autosub")
 
 # Debug info
 log.debug(f"PLEX_URL: {PLEX_URL}")
-log.debug(f"PLEX_TOKEN: {PLEX_TOKEN}")
 log.debug(f"WEBHOOK_PORT: {WEBHOOK_PORT}")
-log.debug(f"SKIP_LANGUAGES: {SKIP_LANGUAGES}")
-log.debug(f"SKIP_SUB_LANGUAGES: {SKIP_SUB_LANGUAGES}")
-log.debug(f"DEBUG_LOGGING: {DEBUG_LOGGING}")
+log.debug(f"WHISPER_MODEL: {WHISPER_MODEL}")
+log.debug(f"WHISPER_DEVICE: {WHISPER_DEVICE}")
+log.debug(f"WHISPER_COMPUTETYPE: {WHISPER_COMPUTETYPE}")
 
 app = Flask(__name__)
+executor = ThreadPoolExecutor(max_workers=1)
 
 
 @app.route("/webhook", methods=["POST"])
@@ -44,15 +50,18 @@ def webhook():
     is 'library.new', it logs the event and continues processing the new library item.
     Otherwise, the event type is logged and discarded.
     """
-    if "PlexMediaServer" in request.headers.get("User-Agent"):
-        log.debug(request.form["payload"])
-        payload = json.loads(request.form["payload"])
-        event = payload["event"]
-        if event == "library.new":
-            log.info("New library item detected")
-            get_metadata(payload)
-        else:
-            log.info(f"Discarding event type: {event}")
+    if "PlexMediaServer" in request.headers.get("User-Agent", ""):
+        try:
+            log.debug(request.form["payload"])
+            payload = json.loads(request.form["payload"])
+            event = payload["event"]
+            if event == "library.new":
+                log.info("New library item detected")
+                get_metadata(payload)
+            else:
+                log.info(f"Discarding event type: {event}")
+        except Exception as e:
+            log.error(f"Error parsing webhook payload: {e}")
     else:
         log.error("Invalid User-Agent")
     return Response(status=200)
@@ -78,68 +87,61 @@ def get_metadata(payload):
     log.info("Reveived metadata response")
     log.debug(response.content)
     if response.status_code == 200:
-        filepath = parse_plex_xml(response.content, SKIP_LANGUAGES, SKIP_SUB_LANGUAGES)
+        filepath = parse_plex_xml(response.content)
         if filepath:
             log.info(f"Creating task for {filepath}")
-            start_transcription.delay(filepath)
+            executor.submit(start_transcription, filepath)
     else:
         log.error(f"Request error: {response.status_code}")
 
 
-def parse_plex_xml(response, skip_languages, skip_sub_languages):
+def start_transcription(filepath):
+    """
+    Transcribe and translate the audio of a given video file and save the transcription to an SRT format.
+    """
+    model = stable_whisper.load_faster_whisper(
+        WHISPER_MODEL,
+        device=WHISPER_DEVICE,
+        compute_type=WHISPER_COMPUTETYPE,
+        cpu_threads=WHISPER_CPUTHREADS,
+    )
+    try:
+        start_time = perf_counter()
+        log.info(f"Starting transcription for {filepath}")
+        result = model.transcribe_stable(filepath, task="translate", vad=True)
+        result.to_srt_vtt(
+            filepath.rsplit(".", 1)[0] + ".aigen.en.srt", word_level=False
+        )
+        elapsed_time = perf_counter() - start_time
+        log.info(f"Transcription for {filepath} completed in {elapsed_time} seconds")
+    except Exception as e:
+        log.error(f"Error processing {filepath}: {e}")
+
+def parse_plex_xml(response):
     root = ET.fromstring(response)
     filepath = ""
 
     # Check if the Plex metadata contains a filepath
     for part in root.iter("Part"):
-        for att in part.attrib:
-            if att == "file":
-                filepath = part.attrib[att]
-                log.info(f"Filepath is {filepath}")
+        if "file" in part.attrib:
+            filepath = part.attrib["file"]
+            log.info(f"Filepath is {filepath}")
+            break
 
     if filepath:
-        # Check for audio streams and return False if they match one of the audio languages we want to skip
+        # Look for Dutch audio streams
         for stream in root.iter("Stream"):
-            for att in stream.attrib:
-                if att == "channels":
-                    log.info(f"Found an audio stream")
-                    if skip_languages:
-                        for language in skip_languages:
-                            if (
-                                stream.attrib["languageTag"] == language
-                                or stream.attrib["languageCode"] == language
-                            ):
-                                log.info(f"Audio language is {language}, skipping")
-                                return False
-                            else:
-                                log.info(
-                                    f"Audio language is not {language}, continuing"
-                                )
+            if "channels" in stream.attrib:  # Indicates an audio stream
+                lang_tag = stream.attrib.get("languageTag", "").lower()
+                lang_code = stream.attrib.get("languageCode", "").lower()
+                if lang_tag in ["nl", "nld", "dut"] or lang_code in ["nl", "nld", "dut"]:
+                    log.info(f"Found Dutch audio stream. Proceeding with subtitle generation for {filepath}.")
+                    return filepath
 
-        # Check for subtitles and return False if they match one of the sub languages we want to skip
-        for stream in root.iter("Stream"):
-            for att in stream.attrib:
-                if att == "codec":
-                    if stream.attrib["codec"] == "srt":
-                        log.info(f"Found a subtitle stream")
-                        if skip_sub_languages:
-                            for sublang in skip_sub_languages:
-                                if (
-                                    stream.attrib["languageTag"] == sublang
-                                    or stream.attrib["languageCode"] == sublang
-                                ):
-                                    log.info(
-                                        f"Subtitle language is {sublang}, skipping"
-                                    )
-                                    return False
-                                else:
-                                    log.info(
-                                        f"Subtitle language is not {sublang}, continuing"
-                                    )
-
-        return filepath
+        log.info(f"No Dutch audio stream found in {filepath}, skipping.")
+        return False
     else:
-        log.info("No filepath found, skipping")
+        log.info("No filepath found, skipping.")
         return False
 
 

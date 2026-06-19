@@ -5,8 +5,8 @@ Inspired by [McCloudS](https://github.com/McCloudS) / [subgen](https://github.co
 
 ---
 ## Features
-- Automatically scans new Plex media for audio that is not English.
-- Basic multithreading using [celery](https://github.com/celery/celery).
+- Automatically scans new Plex media for Dutch audio.
+- Basic background processing using `concurrent.futures`.
 - Supports CPU or Nvidia GPU's for transcribing.
 - Uses [stable-ts](https://github.com/jianfch/stable-ts) and [faster-whisper](https://github.com/guillaumekln/faster-whisper) for efficient audio transcription and translation to English.
 - Saves the transcription to an SRT file in the media's directory for use as subtitles.
@@ -16,8 +16,7 @@ Inspired by [McCloudS](https://github.com/McCloudS) / [subgen](https://github.co
 > Make sure your media file paths are setup correctly.
 - Requires media folder paths to match relative to the Plex server.
 If your Plex media path is `/media/movies/video.mp4`, then autosub needs to be able to reach that media using the same path.
-- Only translates into English subtitles.
-- Currently skips any media that contains English audio.
+- Only translates Dutch audio into English subtitles.
 
 ## Setup
 
@@ -26,12 +25,10 @@ If your Plex media path is `/media/movies/video.mp4`, then autosub needs to be a
 > GPU execution requires these NVIDIA libraries to be installed: cuBLAS for CUDA 12 & cuDNN 8 for CUDA 12
 > [Read More](https://github.com/guillaumekln/faster-whisper#gpu)
 1. Install Python3, python3-pip, and ffmpeg.
-2. Install dependencies: `pip install flask stable-ts faster-whisper requests "celery[redis]" `
+2. Install dependencies: `pip install flask stable-ts faster-whisper requests`
 3. Clone this repository: `git clone https://github.com/TheMCLG/autosub.git`
-4. Configure the Global Variables in `autosub.py` and `tasks.py` - see the [Variables](#Variables) table below.
-5. Run `run.sh` or start both scripts manually by running:
-   - `celery -A tasks worker --loglevel=INFO &`
-   - `python3 -u autosub.py`
+4. Configure the Global Variables in `autosub.py` - see the [Variables](#Variables) table below.
+5. Start the script manually by running: `python3 -u autosub.py`
 
 ### Docker
 The Dockerfile can be found in this repo, alongside an example `docker-compose.yml`.
@@ -66,14 +63,9 @@ Finding your token is pretty simple:
 | `WHISPER_DEVICE`   | `cuda`                     | Compute device for Whisper. Options: `cpu` or `cuda` for Nvidia GPU's. Note: using `cuda` requires cuBLAS and cuDNN 8 for CUDA 12 installed. |
 | `WHISPER_COMPUTETYPE` | `float16`                | Recommended: `int8` for CPU or `float16` for CUDA.         |
 | `WHISPER_CPUTHREADS` | `2`                       | Number of CPU threads to use (only applicable for CPU).   |
-| `WHISPER_TASK`       | `translate`                | Whisper task. Options: `transcribe` or `translate` to translate the text to English. |
-| `SKIP_LANGUAGES`    | `en`                    | Comma seperated list containing audio languages for which you do **NOT** want to generate subtitles. Supports two-letter and three-letter lowercase abbreviation, see [ISO 639](https://en.wikipedia.org/wiki/ISO_639). Set to `None` to generate subtitles for all audio languages. Example: `eng, de, nl`.                     |
-| `SKIP_SUB_LANGUAGES`    | `en`                    | Comma seperated list containing subtitle languages. Will **NOT** generate a subtitle if the file has an existing subtitle matching this two-letter or three-letter lowercase abbreviation, see [ISO 639](https://en.wikipedia.org/wiki/ISO_639). Set to `None` to generate subtitles regardless of existing subtitles. Example: `eng, de, nl`.                     |
 | `DEBUG_LOGGING`    | `False`                    | Set to `True` to enable debug logging.                     |
 
 ## Backlog
-- [x] Add configurable option to skip transcribing based on existing audio languages.
-- [x] Add configurable option to skip transcribing based on existing subtitle languages.
 - [x] Improve audio stream detection/selection.
 - [ ] Remove dependency on access to Plex media paths.
 - [ ] Add scheduled Plex library scanning.
@@ -93,4 +85,3 @@ If and when I feel like it. This is a hobby project build mostly for my personal
 - [OpenAI Whisper](https://github.com/openai/whisper)
 - [stable-ts](https://github.com/jianfch/stable-ts)
 - [faster-whisper](https://github.com/guillaumekln/faster-whisper)
-- [celery](https://github.com/celery/celery)
