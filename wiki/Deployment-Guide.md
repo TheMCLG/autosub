@@ -74,6 +74,8 @@ version: '3.3'
 services:
   autosub:
     container_name: autosub
+    # Note: For production stability, it is recommended to pin a specific version tag
+    # instead of 'latest' (e.g., themclg/autosub:v1.0.0) if tags are available.
     image: themclg/autosub:latest
     hostname: autosub
     ports:
@@ -120,7 +122,16 @@ Check the logs to ensure it started successfully:
 ```bash
 docker compose logs -f
 ```
-You should see output indicating that the Flask server is running on port `8765`. Proceed to **[Section 6: Configuring Plex Webhooks](#6-configuring-plex-webhooks)**.
+You should see output indicating that the Flask server is running on port `8765`.
+
+### Step 3.5: Post-Deployment Health Check
+To verify your container is running correctly, you can perform a quick health check from your terminal:
+```bash
+curl http://localhost:8765/health
+```
+*(If the `/health` endpoint is not defined, you can look for the "Running on http://..." message in the container logs).*
+
+Proceed to **[Section 6: Configuring Plex Webhooks](#6-configuring-plex-webhooks)**.
 
 ---
 
@@ -276,7 +287,17 @@ Here is a detailed breakdown of what every variable does:
 
 ---
 
-## 8. Backup, Recovery, and Updates
+## 8. Common Pitfalls
+
+Here are some frequent mistakes users make during initial setup:
+- **Mixing up `localhost` / `127.0.0.1` in Docker:** If you run AutoSub in Docker and set your `PLEX_URL` to `http://127.0.0.1:32400`, the container will look for Plex *inside* the container, which will fail. Always use your host machine's actual IP (e.g., `192.168.1.50`).
+- **Forgetting to Expose Ports:** If you change `WEBHOOK_PORT` to something other than `8765`, make sure you also update the `ports:` mapping in your `docker-compose.yml` (e.g., `"9000:9000"`).
+- **No Plex Pass:** While you might find the Webhook settings page, Webhooks are officially a Plex Pass feature. If webhooks are silently failing to trigger, verify your Plex Pass status.
+- **Copy/Paste Errors in Configuration:** Missing quotes or extra spaces in your `PLEX_TOKEN` or `PLEX_URL` can cause immediate failure. We provide an `.env.example` file in the repository root you can copy to avoid typos!
+
+---
+
+## 9. Backup, Recovery, and Updates
 
 - **Backups:** Because AutoSub operates entirely statelessly via the Plex API, there is no internal database or configuration file to backup other than your `docker-compose.yml` and environment variables. To back up your setup, simply copy your `docker-compose.yml` to a safe location.
 - **Updating Docker Image:** If using Method A, simply pull the latest image and recreate the container:
@@ -293,7 +314,7 @@ Here is a detailed breakdown of what every variable does:
 
 ---
 
-## 9. Troubleshooting
+## 10. Troubleshooting
 
 **Issue: "Connection Refused" or Webhooks not arriving.**
 - *Fix:* Ensure the IP address in your Plex Webhook settings matches the machine running AutoSub. Ensure port `8765` is open on any firewalls.
