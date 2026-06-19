@@ -47,9 +47,9 @@ services:
       - 8765:8765
     environment:
       - "PLEX_URL=http://127.0.0.1:32400" #Plex server URL including http(s):// and port
-      - "PLEX_TOKEN=xxxxxxxxxxxxxx" #Your Plex token
+      - "PLEX_TOKEN=xxxxxxxxxxxxxx" #Replace with your actual Plex token
       - "WEBHOOK_PORT=8765" #Port to listen for webhooks
-      - "WHISPER_MODEL=large-v3" #tiny, base, small, medium, large, large-v2, large-v3, large-v3-turbo
+      - "WHISPER_MODEL=large-v3" #tiny, base, small, medium, large, large-v2, large-v3, large-v3-turbo. Recommended: large-v3 for accuracy
       - "WHISPER_DEVICE=cuda" #cpu or cuda for Nvidia GPU's
       - "WHISPER_COMPUTETYPE=float16" #Recommended: int8 for cpu or float16 for cuda
       - "WHISPER_CPUTHREADS=2" #Number of CPU threads to use (only applicable for cpu)
@@ -85,7 +85,7 @@ Finding your token is pretty simple:
 | `PLEX_URL`         | `http://127.0.0.1:32400`    | Plex server URL including `http(s)://` and port.           |
 | `PLEX_TOKEN`       | (None)                     | Your Plex token. Must be provided.                         |
 | `WEBHOOK_PORT`     | `8765`                     | Port for the Flask server to listen for webhooks.         |
-| `WHISPER_MODEL`    | `large-v3`                 | Whisper model size. Options: `tiny`, `base`, `small`, `medium`, `large`, `large-v2`, `large-v3`, `large-v3-turbo`. |
+| `WHISPER_MODEL`    | `large-v3`                 | Whisper model size. Options: `tiny`, `base`, `small`, `medium`, `large`, `large-v2`, `large-v3`, `large-v3-turbo`. Recommended: `large-v3` for accuracy. |
 | `WHISPER_DEVICE`   | `cuda`                     | Compute device for Whisper. Options: `cpu` or `cuda` for Nvidia GPU's. Note: using `cuda` requires cuBLAS and cuDNN 8 for CUDA 12 installed. |
 | `WHISPER_COMPUTETYPE` | `float16`                | Recommended: `int8` for CPU or `float16` for CUDA.         |
 | `WHISPER_CPUTHREADS` | `2`                       | Number of CPU threads to use (only applicable for CPU).   |
