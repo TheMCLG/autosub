@@ -49,9 +49,11 @@ class TestTasks(unittest.TestCase):
             "format": "srt",
             "X-Plex-Token": "token123"
         }
+        headers = {'Accept': 'text/plain, */*'}
         mock_requests_post.assert_called_once()
         self.assertEqual(mock_requests_post.call_args[0][0], upload_url)
         self.assertEqual(mock_requests_post.call_args[1]['params'], params)
+        self.assertEqual(mock_requests_post.call_args[1]['headers'], headers)
 
 
     @patch('tasks.stable_whisper.load_faster_whisper')

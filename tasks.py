@@ -58,8 +58,9 @@ def start_transcription(rating_key, part_key, plex_url, plex_token):
                 "format": "srt",
                 "X-Plex-Token": plex_token
             }
+            headers = {'Accept': 'text/plain, */*'}
             with open(temp_filepath, 'rb') as f:
-                upload_response = requests.post(upload_url, params=params, data=f, timeout=10)
+                upload_response = requests.post(upload_url, params=params, headers=headers, data=f, timeout=10)
 
             if upload_response.status_code in (200, 201):
                 log.info(f"Successfully uploaded subtitle for ratingKey: {rating_key}")
