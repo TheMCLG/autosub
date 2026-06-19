@@ -6,7 +6,7 @@ import json
 import requests
 import xml.etree.ElementTree as ET
 import concurrent.futures
-import atexit
+import signal
 from tasks import start_transcription
 
 def str_to_bool(s):
@@ -31,7 +31,16 @@ log = logging.getLogger("autosub")
 
 # Thread pool for background tasks - 1 worker is ideal as transcription is heavily CPU/GPU bound
 executor = concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS)
-atexit.register(lambda: executor.shutdown(wait=False))
+
+# Graceful shutdown handler
+def graceful_shutdown(signum, frame):
+    log.info("Received shutdown signal. Waiting for active transcriptions to finish...")
+    executor.shutdown(wait=True)
+    log.info("Shutdown complete.")
+    sys.exit(0)
+
+signal.signal(signal.SIGTERM, graceful_shutdown)
+signal.signal(signal.SIGINT, graceful_shutdown)
 
 app = Flask(__name__)
 
@@ -49,7 +58,7 @@ def webhook():
             else:
                 log.info(f"Discarding event type: {payload.get('event')}")
         except json.JSONDecodeError:
-            log.error("Invalid JSON payload")
+            log.exception(f"Invalid JSON payload snippet: {request.form.get('payload', '')[:200]}")
     else:
         log.error("Invalid User-Agent")
     return Response(status=200)
@@ -67,44 +76,48 @@ def get_metadata(payload):
         response = requests.get(url, headers=headers, timeout=10)
         if response.status_code == 200:
             filepath = parse_plex_xml(response.content, SKIP_LANGUAGES, SKIP_SUB_LANGUAGES)
-            if filepath:
+            if filepath is not None:
                 log.info(f"Creating task for {filepath}")
                 executor.submit(start_transcription, filepath)
         else:
             log.error(f"Request error: {response.status_code}")
     except requests.RequestException as e:
-        log.error(f"Network error fetching metadata: {e}")
+        log.exception(f"Network error fetching metadata: {e}")
     except Exception as e:
-        log.error(f"Error fetching metadata: {e}")
+        log.exception(f"Error fetching metadata: {e}")
 
 def parse_plex_xml(response, skip_languages, skip_sub_languages):
+    """
+    Parses XML metadata from Plex to determine the file path and streams.
+    Returns the file path string if valid, or None if skipped or missing.
+    """
     try:
         root = ET.fromstring(response)
-        filepath = ""
+        filepath = None
         for part in root.iter("Part"):
             if "file" in part.attrib:
                 filepath = part.attrib["file"]
                 break
 
         if not filepath:
-            return False
+            return None
 
         for stream in root.iter("Stream"):
             if stream.attrib.get("streamType") == "2" or stream.attrib.get("channels"):
                 lang_tag = stream.attrib.get("languageTag")
                 lang_code = stream.attrib.get("languageCode")
                 if skip_languages and any(l in (lang_tag, lang_code) for l in skip_languages):
-                    return False
+                    return None
             elif stream.attrib.get("codec") == "srt":
                 lang_tag = stream.attrib.get("languageTag")
                 lang_code = stream.attrib.get("languageCode")
                 if skip_sub_languages and any(l in (lang_tag, lang_code) for l in skip_sub_languages):
-                    return False
+                    return None
 
         return filepath
     except Exception as e:
-        log.error(f"Error parsing XML from Plex: {e}")
-        return False
+        log.exception(f"Error parsing XML from Plex: {e}")
+        return None
 
 if __name__ == "__main__":
     app.run(debug=DEBUG_LOGGING, host="0.0.0.0", port=WEBHOOK_PORT)

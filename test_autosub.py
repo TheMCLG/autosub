@@ -62,7 +62,7 @@ class TestAutosub(unittest.TestCase):
         mock_response.content = b'<xml></xml>'
         mock_requests_get.return_value = mock_response
 
-        mock_parse_plex_xml.return_value = False
+        mock_parse_plex_xml.return_value = None
 
         payload = {'Metadata': {'ratingKey': '1234'}}
         autosub.get_metadata(payload)
@@ -91,7 +91,7 @@ class TestAutosub(unittest.TestCase):
         </MediaContainer>
         '''
         result = autosub.parse_plex_xml(xml_data, ['de'], [])
-        self.assertFalse(result)
+        self.assertIsNone(result)
 
     def test_parse_plex_xml_skip_sub_lang(self):
         xml_data = '''
@@ -102,7 +102,7 @@ class TestAutosub(unittest.TestCase):
         </MediaContainer>
         '''
         result = autosub.parse_plex_xml(xml_data, ['de'], ['en'])
-        self.assertFalse(result)
+        self.assertIsNone(result)
 
     def test_parse_plex_xml_success(self):
         xml_data = '''
@@ -121,7 +121,7 @@ class TestAutosub(unittest.TestCase):
         </MediaContainer>
         '''
         result = autosub.parse_plex_xml(xml_data, ['en'], ['en'])
-        self.assertFalse(result)
+        self.assertIsNone(result)
 
     def test_parse_plex_xml_missing_language_attributes(self):
         xml_data = '''
@@ -132,7 +132,6 @@ class TestAutosub(unittest.TestCase):
         '''
         result = autosub.parse_plex_xml(xml_data, ['en'], ['en'])
         self.assertEqual(result, '/path/to/media.mp4')
-
 
     def test_str_to_bool(self):
         self.assertTrue(autosub.str_to_bool("True"))

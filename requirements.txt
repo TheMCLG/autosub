@@ -2,3 +2,4 @@ flask
 stable-ts
 faster-whisper
 requests
+gunicorn
