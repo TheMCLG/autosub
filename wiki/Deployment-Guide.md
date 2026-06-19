@@ -23,8 +23,8 @@ AutoSub connects directly to your Plex server via the network to detect newly ad
 Before starting, make sure you have the following ready:
 - **A running Plex Media Server** (you will need its URL, e.g., `http://192.168.1.100:32400`).
 - **Plex Pass (Highly Recommended):** Webhooks are generally a Plex Pass feature. Check Plex documentation for your specific account setup.
-- **Docker and Docker Compose installed** (If using the Docker deployment methods).
-  - *If you are planning to use an NVIDIA GPU for transcription*, you will need the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) installed so Docker can access your GPU.
+- **Docker and Docker Compose installed** (If using the Docker deployment methods). For Windows users, we recommend installing **Docker Desktop** and ensuring WSL2 integration is enabled.
+  - *If you are planning to use an NVIDIA GPU for transcription*, you will need the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) installed so Docker can access your GPU (on Windows, Docker Desktop with WSL2 handles this natively).
 - **A text editor** (like Notepad, TextEdit, VSCode, or nano) to modify configuration files.
 - Basic understanding of terminal/command prompt. Don't worry, we'll provide the exact commands!
 
@@ -189,7 +189,10 @@ If you prefer not to use Docker, you can run AutoSub directly on your host machi
 You need Python 3, pip, and `ffmpeg` installed on your system.
 - **Ubuntu/Debian:** `sudo apt update && sudo apt install python3 python3-pip ffmpeg git -y`
 - **macOS (using Homebrew):** `brew install python ffmpeg git`
-- **Windows:** Download Python from python.org, and FFmpeg from ffmpeg.org (ensure they are added to your system PATH).
+- **Windows:**
+  1. Download and install Python from [python.org](https://www.python.org/downloads/) (Make sure to check "Add Python to PATH" during installation).
+  2. Download FFmpeg from [gyan.dev](https://www.gyan.dev/ffmpeg/builds/) or install via winget: `winget install ffmpeg`. Ensure the `bin` folder is added to your system's Environment Variables (PATH).
+  3. Install Git from [git-scm.com](https://git-scm.com/download/win).
 
 ### Step 5.2: Clone the Repository
 ```bash
@@ -248,6 +251,8 @@ Add a new movie or TV show to your Plex server. Watch the AutoSub logs (`docker 
 
 > **Note:** If AutoSub receives the webhook but doesn't start processing, ensure push notifications are turned on for your Plex Server in the Plex settings.
 
+> **Security Note:** It is highly recommended to keep AutoSub on your local network. Do **not** expose port `8765` directly to the public internet. If you need to access it remotely or if your Plex server is hosted externally, consider using a VPN (like Tailscale or WireGuard) or placing AutoSub behind a secure Reverse Proxy with strict access controls.
+
 ---
 
 ## 7. Environment Variables Explained
@@ -271,7 +276,24 @@ Here is a detailed breakdown of what every variable does:
 
 ---
 
-## 8. Troubleshooting
+## 8. Backup, Recovery, and Updates
+
+- **Backups:** Because AutoSub operates entirely statelessly via the Plex API, there is no internal database or configuration file to backup other than your `docker-compose.yml` and environment variables. To back up your setup, simply copy your `docker-compose.yml` to a safe location.
+- **Updating Docker Image:** If using Method A, simply pull the latest image and recreate the container:
+  ```bash
+  docker compose pull
+  docker compose up -d
+  ```
+- **Updating Custom Image:** If using Method B, pull the latest code and rebuild:
+  ```bash
+  git pull
+  docker build -t my-custom-autosub:latest .
+  docker compose up -d
+  ```
+
+---
+
+## 9. Troubleshooting
 
 **Issue: "Connection Refused" or Webhooks not arriving.**
 - *Fix:* Ensure the IP address in your Plex Webhook settings matches the machine running AutoSub. Ensure port `8765` is open on any firewalls.
