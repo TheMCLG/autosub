@@ -9,7 +9,7 @@ Inspired by [McCloudS](https://github.com/McCloudS) / [subgen](https://github.co
 ---
 ## Features
 - Automatically scans new Plex media for audio that is not English.
-- **Zero file system dependencies:** Operates entirely over the network via the Plex API—no volume mounts or file system access needed!
+- **Zero file system dependencies:** Operates entirely over the network via the Plex API—no volume mounts or file system access needed, simplifying containerized setups and enabling true network-only deployments.
 - Supports CPU or Nvidia GPU's for transcribing.
 - Uses [stable-ts](https://github.com/jianfch/stable-ts) and [faster-whisper](https://github.com/guillaumekln/faster-whisper) for efficient audio transcription and translation to English.
 - Uploads the transcription directly to the Plex server as an SRT subtitle track.
@@ -35,7 +35,7 @@ Inspired by [McCloudS](https://github.com/McCloudS) / [subgen](https://github.co
 The Dockerfile can be found in this repo.
 A prebuilt image can be downloaded from: [themclg/autosub:latest](https://hub.docker.com/layers/themclg/autosub/latest/images/sha256-7595f100b774b3835ad02d05df27992b6bc70fbf10927c835e1d2a17907a05d4?context=repo). The image has built-in support for cuda/GPU transcribing but you will need to map your GPU in your `docker-compose.yml`.
 
-Example `docker-compose.yml`:
+Example `docker-compose.yml` (Note: See the `docker-compose.yml` file in this repository for the authoritative, most up-to-date version):
 ```yaml
 version: '3.3'
 services:
@@ -86,8 +86,8 @@ Finding your token is pretty simple:
 | `PLEX_TOKEN`       | (None)                     | Your Plex token. Must be provided.                         |
 | `WEBHOOK_PORT`     | `8765`                     | Port for the Flask server to listen for webhooks.         |
 | `WHISPER_MODEL`    | `large-v3`                 | Whisper model size. Options: `tiny`, `base`, `small`, `medium`, `large`, `large-v2`, `large-v3`, `large-v3-turbo`. Recommended: `large-v3` for accuracy. |
-| `WHISPER_DEVICE`   | `cuda`                     | Compute device for Whisper. Options: `cpu` or `cuda` for Nvidia GPU's. Note: using `cuda` requires cuBLAS and cuDNN 8 for CUDA 12 installed. |
-| `WHISPER_COMPUTETYPE` | `float16`                | Recommended: `int8` for CPU or `float16` for CUDA.         |
+| `WHISPER_DEVICE`   | `cuda`                     | Compute device for Whisper. Options: `cpu` or `cuda` for Nvidia GPU's. Recommended: `cuda` for significantly faster transcription speeds. Note: using `cuda` requires cuBLAS and cuDNN 8 for CUDA 12 installed. |
+| `WHISPER_COMPUTETYPE` | `float16`                | Precision type for model computation. Recommended: `int8` for `cpu` (balances speed/memory) or `float16` for `cuda` (optimal GPU performance). |
 | `WHISPER_CPUTHREADS` | `2`                       | Number of CPU threads to use (only applicable for CPU).   |
 | `WHISPER_TASK`       | `translate`                | Whisper task. Options: `transcribe` (transcribes in the original audio language) or `translate` (transcribes and translates the audio directly into English). |
 | `SKIP_LANGUAGES`    | `en`                    | Comma seperated list containing audio languages for which you do **NOT** want to generate subtitles. Supports two-letter and three-letter lowercase abbreviation, see [ISO 639](https://en.wikipedia.org/wiki/ISO_639). Set to `None` to generate subtitles for all audio languages. Example: `eng, de, nl`.                     |
